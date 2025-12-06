@@ -1,110 +1,57 @@
-# Project Task Manager API
+# Mini Jira Backend
 
-A comprehensive backend API for managing projects and tickets, featuring user authentication, role-based access control, and filtering capabilities.
+This is the backend API for the Mini Jira project, handling data persistence, authentication, and business logic.
 
-## Setup Instructions
+## Tech Stack
 
-### Prerequisites
-- Node.js (v14+)
-- MongoDB (Local or Atlas)
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Framework**: [Express.js](https://expressjs.com/)
+- **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
+- **Authentication**: JWT (JsonWebToken)
+- **Email Service**: Nodemailer
 
-### Installation
-1.  Clone the repository.
-2.  Install dependencies:
+## Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB instance (Local or Atlas)
+
+## Configuration
+
+Ensure you have a `.env` file in the root directory with the following variables:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=your_email_address
+EMAIL_PASS=your_email_password
+```
+
+## Getting Started
+
+1.  **Install Dependencies**
+
     ```bash
     npm install
     ```
-3.  Create a `.env` file in the root directory:
-    ```env
-    PORT=5000
-    MONGO_URI=mongodb://localhost:27017/project-task-manager
-    JWT_SECRET=your_jwt_secret
-    ```
 
-### Running the Server
-- **Development Mode** (with nodemon):
+2.  **Run Development Server**
+
+    Starts the server with `nodemon` for hot-reloading.
+
     ```bash
     npm run dev
     ```
-- **Production Mode**:
+
+3.  **Start Production Server**
+
     ```bash
     npm start
     ```
 
-### Bootstrapping Admin User
-To create an initial Admin user (Manager role):
-```bash
-node bootstrap_admin.js
-```
-Credentials: `admin@example.com` / `password123`
+## API Features
 
----
-
-## API Endpoints
-
-All endpoints start with `/api`.
-**Authentication**: Most endpoints require a Bearer Token in the header: `Authorization: Bearer <token>`.
-
-### Authentication (`/users`)
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/users/login` | Login user & get token | No |
-| `POST` | `/users/create` | Register new user | Yes (Manager) |
-| `GET` | `/users/all` | Get all users | Yes |
-
-### Projects (`/projects`)
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/projects/all` | Get all projects | Yes |
-| `GET` | `/projects/get?projectId=` | Get project by ID | Yes |
-| `POST` | `/projects/create` | Create new project | Yes (Manager) |
-| `PUT` | `/projects/update?projectId=` | Update project | Yes (Manager) |
-| `DELETE` | `/projects/delete?projectId=` | Delete project | Yes (Manager) |
-
-### Tickets (`/tickets`)
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/tickets/all` | Get all tickets (supports filters) | Yes |
-| `GET` | `/tickets/get?ticketId=` | Get ticket by ID | Yes |
-| `POST` | `/tickets/create` | Create new ticket | Yes |
-| `PUT` | `/tickets/update?ticketId=` | Update ticket | Yes |
-| `DELETE` | `/tickets/delete?ticketId=` | Delete ticket | Yes |
-
-**Ticket Filters**:
-- `?status=Open`
-- `?priority=High`
-- `?assign=DeveloperName`
-
-## Data Models
-
-### User
-- `name`: String
-- `email`: String (Unique)
-- `password`: String (Hashed)
-- `role`: Enum ['Manager', 'Developer']
-
-### Project
-- `name`: String (Unique)
-- `managerId`: ObjectId (Ref: User)
-- `description`: String
-- `status`: String
-- `startDate`: Date
-- `endDate`: Date
-
-### Ticket
-- `projectId`: ObjectId (Ref: Project)
-- `title`: String
-- `description`: String
-- `assign`: String (Display Name)
-- `developerId`: ObjectId (Ref: User)
-- `status`: String
-- `priority`: String
-- `spendTime`: String
-- `duration`: String
-- `remark`: String
-
-## Verification
-Run the provided shell scripts to verify functionality:
-- `./verify_auth_real.sh`: Test Authentication
-- `./verify_permissions.sh`: Test RBAC
-- `./verify_filter.sh`: Test Filtering
+- **User Authentication**: Register, Login (JWT-based)
+- **Project Management**: Create, read, update projects
+- **Ticket Management**: Create, update, assign tickets
+- **User Roles**: Developer, Manager, Admin
