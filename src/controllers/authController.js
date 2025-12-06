@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', {
-        expiresIn: '30d',
+        expiresIn: '2d',
     });
 };
 
