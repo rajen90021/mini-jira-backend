@@ -18,10 +18,15 @@ const ticketSchema = mongoose.Schema({
         type: String, // Keeping for backward compatibility or display name
         required: false,
     },
+    assignees: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    // Deprecated: kept for backward compatibility if needed, but prefer assignees
     developerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: false, // Making optional for now to avoid breaking existing tests immediately
+        required: false,
     },
     status: {
         type: String,

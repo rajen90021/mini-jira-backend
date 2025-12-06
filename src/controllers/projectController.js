@@ -5,8 +5,33 @@ const Project = require('../models/projectModel');
 // @access  Public
 const getProjects = async (req, res) => {
     try {
-        const projects = await Project.find();
-        res.status(200).json(projects);
+        const { page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc' } = req.query;
+
+        const query = {};
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+
+        const pageNum = Number(page);
+        const limitNum = Number(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        const sortOptions = {};
+        sortOptions[sortBy] = order === 'asc' ? 1 : -1;
+
+        const total = await Project.countDocuments(query);
+        const projects = await Project.find(query)
+            .populate('managerId', 'name email')
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNum);
+
+        res.status(200).json({
+            projects,
+            total,
+            page: pageNum,
+            pages: Math.ceil(total / limitNum),
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -73,11 +98,15 @@ const updateProject = async (req, res) => {
         const project = await Project.findById(projectId);
 
         if (project) {
-            project.name = req.body.name || project.name;
+            // Only update name if it's different to avoid duplicate key error
+            if (req.body.name && req.body.name !== project.name) {
+                project.name = req.body.name;
+            }
             project.description = req.body.description || project.description;
             project.status = req.body.status || project.status;
             project.startDate = req.body.startDate || project.startDate;
             project.endDate = req.body.endDate || project.endDate;
+            project.managerId = req.body.managerId || project.managerId;
 
             const updatedProject = await project.save();
             res.status(200).json(updatedProject);
