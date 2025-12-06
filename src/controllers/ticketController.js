@@ -1,12 +1,12 @@
 
 const Ticket = require('../models/ticketModel');
 
-// @desc    Get all tickets with optional filtering
-// @route   GET /api/tickets/all?assign=&status=&priority=
+// @desc    Get all tickets with optional filtering, search, and pagination
+// @route   GET /api/tickets/all?assign=&status=&priority=&search=&page=&limit=
 // @access  Public
 const getTickets = async (req, res) => {
     try {
-        const { assign, status, priority } = req.query;
+        const { assign, status, priority, search, page = 1, limit = 20 } = req.query;
         const query = {};
 
         if (assign) {
@@ -18,9 +18,27 @@ const getTickets = async (req, res) => {
         if (priority) {
             query.priority = priority;
         }
+        if (search) {
+            query.title = { $regex: search, $options: 'i' };
+        }
 
-        const tickets = await Ticket.find(query);
-        res.status(200).json(tickets);
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        const totalTickets = await Ticket.countDocuments(query);
+        const tickets = await Ticket.find(query)
+            .limit(limitNum)
+            .skip(skip)
+            .sort({ createdAt: -1 }); // Optional: sort by newest first
+
+        res.status(200).json({
+            tickets,
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalTickets / limitNum),
+            totalTickets,
+            count: tickets.length
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
