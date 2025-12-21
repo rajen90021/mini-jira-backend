@@ -2,6 +2,7 @@
 const Ticket = require('../models/ticketModel');
 const User = require('../models/userModel');
 const { sendTicketCreatedEmail, sendTicketAssignedEmail } = require('../utils/emailService');
+const { logActivity } = require('../utils/activityLogger');
 
 // @desc    Get all tickets with optional filtering, search, and pagination
 // @route   GET /api/tickets/all?assign=&status=&priority=&search=&page=&limit=
@@ -73,6 +74,8 @@ const getTicketById = async (req, res) => {
     }
 };
 
+
+
 // @desc    Create a ticket
 // @route   POST /api/tickets/create
 // @access  Public
@@ -103,6 +106,16 @@ const createTicket = async (req, res) => {
             duration,
             remark,
         });
+
+        // Log Activity
+        await logActivity(
+            req.user._id,
+            'created',
+            'Ticket',
+            ticket._id,
+            ticket.title,
+            'Ticket created successfully'
+        );
 
         // Populate ticket with project details for email
         await ticket.populate('projectId', 'name');
@@ -141,11 +154,15 @@ const updateTicket = async (req, res) => {
         if (ticket) {
             // Store old assignees for comparison
             const oldAssignees = ticket.assignees.map(id => id.toString());
+            const oldStatus = ticket.status;
 
             ticket.projectId = req.body.projectId || ticket.projectId;
             ticket.title = req.body.title || ticket.title;
             ticket.description = req.body.description || ticket.description;
             ticket.assign = req.body.assign || ticket.assign;
+
+            let activityAction = 'updated';
+            let activityDetails = 'Ticket updated';
 
             // Check if assignees are being updated
             if (req.body.assignees) {
@@ -167,13 +184,31 @@ const updateTicket = async (req, res) => {
                 }
             }
 
-            ticket.status = req.body.status || ticket.status;
+            if (req.body.status && req.body.status !== oldStatus) {
+                ticket.status = req.body.status;
+                activityAction = 'status_changed';
+                activityDetails = `Status changed from ${oldStatus} to ${ticket.status}`;
+            } else {
+                ticket.status = req.body.status || ticket.status;
+            }
+
             ticket.priority = req.body.priority || ticket.priority;
             ticket.spendTime = req.body.spendTime || ticket.spendTime;
             ticket.duration = req.body.duration || ticket.duration;
             ticket.remark = req.body.remark || ticket.remark;
 
             const updatedTicket = await ticket.save();
+
+            // Log Activity
+            await logActivity(
+                req.user._id,
+                activityAction,
+                'Ticket',
+                ticket._id,
+                ticket.title,
+                activityDetails
+            );
+
             res.status(200).json(updatedTicket);
         } else {
             res.status(404).json({ message: 'Ticket not found' });
@@ -197,6 +232,17 @@ const deleteTicket = async (req, res) => {
 
         if (ticket) {
             await ticket.deleteOne();
+
+            // Log Activity
+            await logActivity(
+                req.user._id,
+                'deleted',
+                'Ticket',
+                ticket._id,
+                ticket.title,
+                'Ticket deleted'
+            );
+
             res.status(200).json({ message: 'Ticket removed' });
         } else {
             res.status(404).json({ message: 'Ticket not found' });
