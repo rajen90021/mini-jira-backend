@@ -3,6 +3,8 @@ const suggestionEngine = require('../utils/suggestionEngine');
 // @desc    Get AI suggestions for a new ticket
 // @route   POST /api/suggestions/analyze
 // @access  Private
+
+
 const analyzeTicket = async (req, res) => {
     try {
         const { title, description, projectId } = req.body;
